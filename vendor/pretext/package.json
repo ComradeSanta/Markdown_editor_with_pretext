@@ -1,0 +1,22 @@
+{
+  "name": "@chenglou/pretext",
+  "version": "0.0.7",
+  "description": "Fast, accurate & comprehensive text measurement & layout",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./layout.js",
+  "types": "./layout.d.ts",
+  "exports": {
+    ".": {
+      "types": "./layout.d.ts",
+      "import": "./layout.js",
+      "default": "./layout.js"
+    },
+    "./rich-inline": {
+      "types": "./rich-inline.d.ts",
+      "import": "./rich-inline.js",
+      "default": "./rich-inline.js"
+    }
+  },
+  "license": "MIT"
+}

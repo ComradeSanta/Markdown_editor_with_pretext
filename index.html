@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown + Word Editor</title>
+  <link rel="icon" href="image.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#181715">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #181715;
+      --surface: #1f1e1b;
+      --surface-elevated: #252320;
+      --text: #faf9f5;
+      --text-muted: #a09d96;
+      --accent: #5db8a6;
+      --border: #3a3835;
+    }
+
+    [data-theme="light"] {
+      --bg: #faf9f5;
+      --surface: #fffdf8;
+      --surface-elevated: #f0ede6;
+      --text: #1a1817;
+      --text-muted: #6d645d;
+      --accent: #2d8a72;
+      --border: #d8cec3;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      padding: 12px 20px;
+      background: var(--surface-elevated);
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .toolbar button {
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .toolbar button:hover {
+      background: var(--surface-elevated);
+      border-color: var(--accent);
+    }
+
+    .toolbar button:active {
+      background: var(--bg);
+      transform: scale(0.98);
+    }
+
+    .file-info {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .theme-toggle span { font-size: 12px; color: var(--text-muted); }
+
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    [data-theme="light"] .switch::after { left: 22px; }
+
+    .editor-container {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .editor-pane {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+    }
+
+    .preview-pane {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+    }
+
+    .pane-label {
+      padding: 10px 20px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--surface-elevated);
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+    }
+
+    #editor {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 20px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      border: none;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      caret-color: var(--accent);
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      min-height: calc(100vh - 100px);
+    }
+
+    #editor::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+    #preview {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 20px;
+      line-height: 1.7;
+      color: var(--text);
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      min-height: calc(100vh - 100px);
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+    }
+
+    #editor::-webkit-scrollbar,
+    #preview::-webkit-scrollbar { width: 8px; }
+    #editor::-webkit-scrollbar-track,
+    #preview::-webkit-scrollbar-track { background: var(--surface); }
+    #editor::-webkit-scrollbar-thumb,
+    #preview::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    #preview h1 { font-size: 2em; margin: 0.67em 0; }
+    #preview h2 { font-size: 1.5em; margin: 0.83em 0; }
+    #preview h3 { font-size: 1.17em; margin: 1em 0; }
+    #preview h4 { font-size: 1em; margin: 1.33em 0; }
+    #preview h5 { font-size: 0.83em; margin: 1.67em 0; }
+    #preview h6 { font-size: 0.67em; margin: 2.33em 0; color: var(--text-muted); }
+    #preview p { margin: 1em 0; opacity: 0.9; }
+    #preview ul, #preview ol { margin: 1em 0; padding-left: 2em; opacity: 0.9; }
+    #preview li { margin: 0.3em 0; }
+    #preview blockquote {
+      margin: 1em 0; padding: 12px 16px;
+      border-left: 3px solid var(--accent);
+      background: var(--surface-elevated);
+      border-radius: 0 8px 8px 0;
+      color: var(--text-muted);
+    }
+    #preview code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.9em;
+      background: var(--surface-elevated);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    #preview pre {
+      background: var(--surface-elevated);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1em 0;
+    }
+    #preview pre code { background: none; padding: 0; }
+    #preview img { max-width: 100%; border-radius: 8px; margin: 1em 0; }
+    #preview a { color: var(--accent); text-decoration: none; }
+    #preview a:hover { text-decoration: underline; }
+    #preview hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    #preview table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    #preview th, #preview td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+    #preview th { background: var(--surface-elevated); font-weight: 500; }
+
+    .drop-zone {
+      position: fixed;
+      inset: 0;
+      background: rgba(93, 184, 166, 0.1);
+      border: 3px dashed var(--accent);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--accent);
+      z-index: 100;
+      pointer-events: none;
+    }
+    .drop-zone.active { display: flex; }
+
+    .save-menu { position: relative; }
+
+    .save-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 50;
+      min-width: 120px;
+    }
+
+    .save-dropdown.show { display: flex; }
+    .save-dropdown button {
+      padding: 8px 16px;
+      font-size: 13px;
+      text-align: left;
+      border-radius: 6px;
+    }
+    .save-dropdown button:hover { background: var(--surface-elevated); }
+
+    .mode-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--accent);
+      color: var(--bg);
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="btn-new">New</button>
+    <button id="btn-open">Open</button>
+    <div class="save-menu">
+      <button id="btn-save">Save</button>
+      <div class="save-dropdown" id="save-dropdown">
+        <button id="btn-save-md">Save as MD</button>
+        <button id="btn-save-docx">Save as DOCX</button>
+      </div>
+    </div>
+    <span class="file-info" id="file-info"></span>
+    <span class="mode-badge" id="mode-badge" style="display: none;">DOCX</span>
+    <div class="theme-toggle">
+      <span id="theme-label">Dark</span>
+      <div class="switch" id="theme-toggle" role="switch" tabindex="0"></div>
+    </div>
+  </div>
+
+  <div class="editor-container">
+    <div class="editor-pane">
+      <div class="pane-label">Markdown</div>
+      <textarea id="editor" placeholder="Start typing markdown..."></textarea>
+    </div>
+    <div class="preview-pane">
+      <div class="pane-label">Preview</div>
+      <div id="preview"></div>
+    </div>
+  </div>
+
+  <div class="drop-zone" id="drop-zone">Drop .md or .docx file here</div>
+
+  <script type="module">
+    import { prepare, layout } from './vendor/pretext/layout.js';
+
+    const editor = document.getElementById('editor');
+    const preview = document.getElementById('preview');
+    const btnNew = document.getElementById('btn-new');
+    const btnOpen = document.getElementById('btn-open');
+    const btnSave = document.getElementById('btn-save');
+    const btnSaveMd = document.getElementById('btn-save-md');
+    const btnSaveDocx = document.getElementById('btn-save-docx');
+    const saveDropdown = document.getElementById('save-dropdown');
+    const fileInfo = document.getElementById('file-info');
+    const dropZone = document.getElementById('drop-zone');
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeLabel = document.getElementById('theme-label');
+    const modeBadge = document.getElementById('mode-badge');
+
+    let currentFileHandle = null;
+    let currentFilename = 'untitled';
+    let sourceMode = 'md'; // 'md' or 'docx'
+    let originalDocxBlob = null; // Store original DOCX blob when opening docx files
+    let originalHtml = null; // Store original HTML for preview
+
+    // Theme handling
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      themeLabel.textContent = theme === 'light' ? 'Light' : 'Dark';
+      localStorage.setItem('editor-theme', theme);
+
+      // Update PWA theme-color to match toolbar
+      const themeColor = theme === 'light' ? '#f0ede6' : '#252320';
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', themeColor);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      setTheme(current === 'light' ? 'dark' : 'light');
+    }
+
+    const savedTheme = localStorage.getItem('editor-theme');
+    if (savedTheme) setTheme(savedTheme);
+
+    themeToggle.addEventListener('click', toggleTheme);
+    themeToggle.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTheme(); }
+    });
+
+    // ---- Pretext-backed auto-grow editor ----
+    // `prepare()` is one-time per text; `layout()` is the cheap resize hot path.
+    // The editor uses `{ whiteSpace: 'pre-wrap' }` to preserve tabs and `\n` like
+    // a textarea. The preview is sized by the browser, capped by CSS so both
+    // panes share a scroll range and the proportional sync-scroll below works.
+
+    let preparedEditor = null, lastEditorValue = '', editorFont = '', editorLineHeight = 0, editorWidth = 0;
+
+    function getEditorMetrics() {
+      editorFont = "14px 'JetBrains Mono', ui-monospace, monospace";
+      const cs = getComputedStyle(editor);
+      const computedLineHeight = parseFloat(cs.lineHeight);
+      editorLineHeight = !isNaN(computedLineHeight) ? computedLineHeight : 14 * 1.7;
+      editorWidth = editor.clientWidth;
+    }
+
+    function autoGrowEditor() {
+      const text = editor.value;
+      if (!editorFont) getEditorMetrics();
+      if (text !== lastEditorValue || !preparedEditor) {
+        preparedEditor = prepare(text, editorFont, { whiteSpace: 'pre-wrap' });
+        lastEditorValue = text;
+      }
+      const { lineCount } = layout(preparedEditor, editorWidth, editorLineHeight);
+      const lines = Math.max(1, lineCount);
+      editor.style.height = (lines * editorLineHeight + 40) + 'px'; // 40 = padding 20 top + 20 bottom
+    }
+
+    function render() {
+      const text = editor.value;
+      const tokens = marked.lexer(text);
+      preview.innerHTML = marked.parser(tokens);
+    }
+
+    editor.addEventListener('input', () => {
+      autoGrowEditor();
+      render();
+    });
+
+    function onResize() {
+      getEditorMetrics();
+      autoGrowEditor();
+      render();
+    }
+
+    window.addEventListener('resize', onResize);
+
+    // ---- Synchronized scrolling ----
+    // When the user scrolls one pane, scroll the other to the same fraction of
+    // its scrollable range. To prevent the echoed scroll event from bouncing
+    // back the other way, we mark the target pane as "just synced" and skip
+    // any scroll events that fire on it during the current task.
+
+    let syncingTarget = null;
+
+    function syncScrollFromTo(from, to) {
+      if (syncingTarget === to) return;
+      const fromMax = from.scrollHeight - from.clientHeight;
+      const toMax = to.scrollHeight - to.clientHeight;
+      if (fromMax <= 0 || toMax <= 0) return;
+      syncingTarget = to;
+      to.scrollTop = (from.scrollTop / fromMax) * toMax;
+      // Release on the next macrotask so the scroll event we just produced
+      // (and any other scroll events queued in the same task) are ignored
+      // before sync re-enables. Using a microtask/raf would let a fast-follow-up
+      // user scroll get swallowed.
+      setTimeout(() => { syncingTarget = null; }, 0);
+    }
+
+    editor.addEventListener('scroll', () => syncScrollFromTo(editor, preview));
+    preview.addEventListener('scroll', () => syncScrollFromTo(preview, editor));
+
+    btnNew.addEventListener('click', () => {
+      editor.value = '';
+      currentFileHandle = null;
+      currentFilename = 'untitled';
+      sourceMode = 'md';
+      originalHtml = null;
+      fileInfo.textContent = '';
+      modeBadge.style.display = 'none';
+      autoGrowEditor();
+      render();
+    });
+
+    btnOpen.addEventListener('click', async () => {
+      try {
+        if (showOpenFilePicker) {
+          const [handle] = await showOpenFilePicker();
+          const file = await handle.getFile();
+          await loadFile(file, handle);
+        } else {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = '*.*';
+          input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) await loadFile(file);
+          };
+          input.click();
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') console.error(e);
+      }
+    });
+
+    async function loadFile(file, handle = null) {
+      const filename = file.name;
+      currentFilename = filename.replace(/\.[^.]+$/, '');
+      fileInfo.textContent = filename;
+      currentFileHandle = handle;
+
+      if (filename.endsWith('.docx')) {
+        const arrayBuffer = await file.arrayBuffer();
+        originalDocxBlob = new Blob([arrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        originalHtml = result.value;
+        const markdown = htmlToMarkdown(result.value);
+        editor.value = markdown;
+        sourceMode = 'docx';
+        modeBadge.style.display = 'inline';
+      } else {
+        editor.value = await file.text();
+        sourceMode = 'md';
+        originalDocxBlob = null;
+        originalHtml = null;
+        modeBadge.style.display = 'none';
+      }
+
+      autoGrowEditor();
+      render();
+    }
+
+    function htmlToMarkdown(html) {
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+
+      function processNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+        const tag = node.tagName.toLowerCase();
+        const children = Array.from(node.childNodes).map(processNode).join('');
+        const innerText = Array.from(node.childNodes).filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent).join('');
+
+        switch (tag) {
+          case 'p': return children.trim() ? children + '\n\n' : '';
+          case 'h1': return `# ${innerText}\n\n`;
+          case 'h2': return `## ${innerText}\n\n`;
+          case 'h3': return `### ${innerText}\n\n`;
+          case 'h4': return `#### ${innerText}\n\n`;
+          case 'h5': return `##### ${innerText}\n\n`;
+          case 'h6': return `###### ${innerText}\n\n`;
+          case 'strong': case 'b': return `**${innerText}**`;
+          case 'em': case 'i': return `*${innerText}*`;
+          case 's': case 'del': return `~~${innerText}~~`;
+          case 'u': return `<u>${innerText}</u>`;
+          case 'code': return '`' + innerText + '`';
+          case 'pre': return '```\n' + children.trim() + '\n```\n\n';
+          case 'br': return '\n';
+          case 'hr': return '---\n\n';
+          case 'ul': return processList(node, 'ul');
+          case 'ol': return processList(node, 'ol');
+          case 'li': return processListItem(node);
+          case 'blockquote': return '> ' + children.replace(/\n/g, '\n> ').trim() + '\n\n';
+          case 'a': return `[${innerText}](${node.href})`;
+          case 'img': return `![${node.alt || ''}](${node.src})`;
+          case 'table': return processTable(node);
+          case 'div': case 'section': case 'article': return children + '\n';
+          default: return children;
+        }
+      }
+
+      function processList(node, type) {
+        let result = '';
+        node.querySelectorAll(':scope > li').forEach((item, i) => {
+          const index = type === 'ol' ? `${i + 1}. ` : '- ';
+          const content = Array.from(item.childNodes).map(processNode).join('');
+          result += index + content.trim() + '\n';
+        });
+        return result + '\n';
+      }
+
+      function processListItem(node) {
+        return Array.from(node.childNodes).map(processNode).join('');
+      }
+
+      function processTable(node) {
+        const rows = node.querySelectorAll('tr');
+        if (rows.length === 0) return '';
+        let md = '';
+        rows.forEach((row, rowIndex) => {
+          const cells = row.querySelectorAll('th, td');
+          const cellContent = Array.from(cells).map(cell =>
+            Array.from(cell.childNodes).map(processNode).join('').trim() || ' '
+          );
+          md += '| ' + cellContent.join(' | ') + ' |\n';
+          if (rowIndex === 0) {
+            md += '| ' + cells.length + ' |\n'.replace(/ |-/g, m => m === ' ' ? '---' : '-');
+          }
+        });
+        return md + '\n';
+      }
+
+      return processNode(temp);
+    }
+
+    // Toggle save dropdown
+    btnSave.addEventListener('click', e => {
+      e.stopPropagation();
+      saveDropdown.classList.toggle('show');
+    });
+    document.addEventListener('click', () => saveDropdown.classList.remove('show'));
+
+    // Save as MD
+    btnSaveMd.addEventListener('click', async () => {
+      saveDropdown.classList.remove('show');
+      try {
+        if (showSaveFilePicker) {
+          const handle = await showSaveFilePicker({
+            suggestedName: currentFilename + '.md',
+            types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(editor.value);
+          await writable.close();
+          currentFileHandle = handle;
+          currentFilename = handle.name.replace(/\.[^.]+$/, '');
+          fileInfo.textContent = handle.name;
+        } else {
+          const blob = new Blob([editor.value], { type: 'text/markdown' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = currentFilename + '.md';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+    });
+
+    // Save as DOCX
+    btnSaveDocx.addEventListener('click', async () => {
+      saveDropdown.classList.remove('show');
+      try {
+        let docx;
+        if (sourceMode === 'docx' && originalDocxBlob) {
+          // When opening a docx file and saving as docx, just return the original blob
+          docx = originalDocxBlob;
+        } else {
+          // Convert markdown to docx
+          docx = await convertMarkdownToDocx();
+        }
+
+        if (showSaveFilePicker) {
+          const handle = await showSaveFilePicker({
+            suggestedName: currentFilename + '.docx',
+            types: [{ description: 'Word Document', accept: { 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] } }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(docx);
+          await writable.close();
+          currentFileHandle = handle;
+          currentFilename = handle.name.replace(/\.[^.]+$/, '');
+          fileInfo.textContent = handle.name;
+          sourceMode = 'docx';
+          originalDocxBlob = docx;
+          originalHtml = preview.innerHTML;
+          modeBadge.style.display = 'inline';
+        } else {
+          const url = URL.createObjectURL(docx);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = currentFilename + '.docx';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      } catch (e) { if (e.name !== 'AbortError') console.error(e); }
+    });
+
+    // Convert markdown → docx (for markdown source)
+    async function convertMarkdownToDocx() {
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
+      const html = marked.parse(editor.value);
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      const paragraphs = [];
+
+      function getRuns(node) {
+        const runs = [];
+        node.childNodes.forEach(child => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            const text = child.textContent || '';
+            if (text) runs.push(new TextRun(text));
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            const tag = child.tagName.toLowerCase();
+            const text = child.textContent || '';
+            switch (tag) {
+              case 'strong': case 'b': if (text) runs.push(new TextRun({ text, bold: true })); break;
+              case 'em': case 'i': if (text) runs.push(new TextRun({ text, italics: true })); break;
+              case 's': case 'del': if (text) runs.push(new TextRun({ text, strike: true })); break;
+              case 'u': if (text) runs.push(new TextRun({ text, underline: {} })); break;
+              case 'code': if (text) runs.push(new TextRun({ text, font: 'Courier New' })); break;
+              case 'a': if (text) runs.push(new TextRun({ text, color: '2d8a72', underline: {} })); break;
+              default: if (text) runs.push(new TextRun(text));
+            }
+          }
+        });
+        return runs;
+      }
+
+      function processElement(node) {
+        const tag = node.tagName.toLowerCase();
+        switch (tag) {
+          case 'h1': return [new Paragraph({ children: getRuns(node), heading: HeadingLevel.HEADING_1 })];
+          case 'h2': return [new Paragraph({ children: getRuns(node), heading: HeadingLevel.HEADING_2 })];
+          case 'h3': return [new Paragraph({ children: getRuns(node), heading: HeadingLevel.HEADING_3 })];
+          case 'h4': return [new Paragraph({ children: getRuns(node), heading: HeadingLevel.HEADING_4 })];
+          case 'h5': return [new Paragraph({ children: getRuns(node), heading: HeadingLevel.HEADING_5 })];
+          case 'h6': return [new Paragraph({ children: getRuns(node), heading: HeadingLevel.HEADING_6 })];
+          case 'p': {
+            const runs = getRuns(node);
+            return runs.length > 0 ? [new Paragraph({ children: runs })] : [new Paragraph({ text: '' })];
+          }
+          case 'blockquote': {
+            const runs = getRuns(node);
+            return [new Paragraph({
+              children: runs.length > 0 ? runs : [new TextRun('')],
+              indent: { left: 720 },
+              border: { left: { style: 'single', size: 12, color: '5db8a6' } }
+            })];
+          }
+          case 'ul': {
+            const items = [];
+            node.querySelectorAll('li').forEach(li => {
+              const runs = getRuns(li);
+              items.push(new Paragraph({ children: [new TextRun({ text: '•  ', font: 'Courier New' }), ...runs] }));
+            });
+            return items;
+          }
+          case 'ol': {
+            const items = [];
+            node.querySelectorAll('li').forEach((li, i) => {
+              const runs = getRuns(li);
+              items.push(new Paragraph({ children: [new TextRun({ text: `${i + 1}.  `, font: 'Courier New' }), ...runs] }));
+            });
+            return items;
+          }
+          case 'pre': {
+            const text = node.textContent || '';
+            return [new Paragraph({ children: [new TextRun({ text, font: 'Courier New' })], shading: { fill: 'f0ede6' } })];
+          }
+          case 'hr': return [new Paragraph({ text: '' })];
+          default: return [];
+        }
+      }
+
+      Array.from(temp.childNodes).forEach(node => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const items = processElement(node);
+          paragraphs.push(...items);
+        } else if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent.trim();
+          if (text) paragraphs.push(new Paragraph({ children: [new TextRun(text)] }));
+        }
+      });
+
+      const doc = new Document({ sections: [{ children: paragraphs }] });
+      return Packer.toBlob(doc);
+    }
+
+    // Convert HTML → docx (for docx source - preserves original formatting)
+    async function convertHtmlToDocx(html) {
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      const paragraphs = [];
+
+      // Recursive function that extracts all content including from nested elements
+      function extractTextWithFormat(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent || '';
+          return text ? [new TextRun(text)] : [];
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return [];
+
+        const tag = node.tagName.toLowerCase();
+        const children = Array.from(node.childNodes).flatMap(extractTextWithFormat);
+
+        switch (tag) {
+          case 'h1': return [new Paragraph({ children, heading: HeadingLevel.HEADING_1 })];
+          case 'h2': return [new Paragraph({ children, heading: HeadingLevel.HEADING_2 })];
+          case 'h3': return [new Paragraph({ children, heading: HeadingLevel.HEADING_3 })];
+          case 'h4': return [new Paragraph({ children, heading: HeadingLevel.HEADING_4 })];
+          case 'h5': return [new Paragraph({ children, heading: HeadingLevel.HEADING_5 })];
+          case 'h6': return [new Paragraph({ children, heading: HeadingLevel.HEADING_6 })];
+          case 'p': {
+            if (children.length === 0) return [new Paragraph({ text: '' })];
+            return [new Paragraph({ children })];
+          }
+          case 'div':
+          case 'section':
+          case 'article':
+          case 'span':
+          case 'font':
+          case 'center':
+            return children; // Pass content up
+          case 'blockquote': {
+            return [new Paragraph({
+              children: children.length > 0 ? children : [new TextRun('')],
+              indent: { left: 720 },
+              border: { left: { style: 'single', size: 12, color: '5db8a6' } }
+            })];
+          }
+          case 'ul': {
+            const items = [];
+            node.querySelectorAll(':scope > li').forEach(li => {
+              const runs = extractTextWithFormat(li);
+              if (runs.length > 0) {
+                items.push(new Paragraph({
+                  children: [new TextRun({ text: '•  ', font: 'Courier New' }), ...runs]
+                }));
+              }
+            });
+            return items;
+          }
+          case 'ol': {
+            const items = [];
+            node.querySelectorAll(':scope > li').forEach((li, i) => {
+              const runs = extractTextWithFormat(li);
+              if (runs.length > 0) {
+                items.push(new Paragraph({
+                  children: [new TextRun({ text: `${i + 1}.  `, font: 'Courier New' }), ...runs]
+                }));
+              }
+            });
+            return items;
+          }
+          case 'li': {
+            return children;
+          }
+          case 'pre': {
+            const text = node.textContent || '';
+            return [new Paragraph({ children: [new TextRun({ text, font: 'Courier New' })], shading: { fill: 'f0ede6' } })];
+          }
+          case 'hr': return [new Paragraph({ text: '' })];
+          case 'br':
+            return [new TextRun({ text: '\n' })];
+          case 'strong':
+          case 'b': return children.map(r => r instanceof TextRun ? new TextRun({ ...r, bold: true }) : r);
+          case 'em':
+          case 'i': return children.map(r => r instanceof TextRun ? new TextRun({ ...r, italics: true }) : r);
+          case 's':
+          case 'del': return children.map(r => r instanceof TextRun ? new TextRun({ ...r, strike: true }) : r);
+          case 'u': return children.map(r => r instanceof TextRun ? new TextRun({ ...r, underline: {} }) : r);
+          case 'code': return children.map(r => r instanceof TextRun ? new TextRun({ ...r, font: 'Courier New' }) : r);
+          case 'a': return children.map(r => r instanceof TextRun ? new TextRun({ ...r, color: '2d8a72', underline: {} }) : r);
+          case 'img': return [new TextRun({ text: node.alt || '' })];
+          case 'table': {
+            const items = [];
+            const rows = node.querySelectorAll('tr');
+            rows.forEach(row => {
+              const cells = row.querySelectorAll('td, th');
+              const cellTexts = Array.from(cells).map(cell => {
+                const runs = extractTextWithFormat(cell);
+                return runs.length > 0 ? runs.map(r => r instanceof TextRun ? r.text : '').join('') : ' ';
+              });
+              items.push(new Paragraph({
+                children: [new TextRun({ text: cellTexts.join(' | ') })]
+              }));
+            });
+            return items;
+          }
+          default: return children.length > 0 ? children : [];
+        }
+      }
+
+      // Process all nodes recursively
+      function processNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent.trim();
+          return text ? [new TextRun(text)] : [];
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return [];
+
+        const tag = node.tagName.toLowerCase();
+
+        // Container elements - recurse and collect results
+        if (['div', 'section', 'article', 'span', 'font', 'center', 'body'].includes(tag)) {
+          const results = [];
+          node.childNodes.forEach(child => {
+            results.push(...processNode(child));
+          });
+          return results;
+        }
+
+        // Block elements that need wrapping in paragraphs
+        if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'hr', 'li'].includes(tag)) {
+          return extractTextWithFormat(node);
+        }
+
+        // List containers
+        if (['ul', 'ol'].includes(tag)) {
+          return extractTextWithFormat(node);
+        }
+
+        // Table
+        if (tag === 'table') {
+          return extractTextWithFormat(node);
+        }
+
+        // Inline formatting - recurse
+        if (['strong', 'b', 'em', 'i', 's', 'del', 'u', 'code', 'a', 'br'].includes(tag)) {
+          return extractTextWithFormat(node);
+        }
+
+        // Unknown block element - treat as paragraph
+        if (node.childNodes.length > 0) {
+          const children = Array.from(node.childNodes).flatMap(processNode);
+          if (children.length > 0) {
+            return [new Paragraph({ children })];
+          }
+        }
+
+        return [];
+      }
+
+      // Process all top-level nodes
+      Array.from(temp.childNodes).forEach(node => {
+        const results = processNode(node);
+        results.forEach(item => {
+          if (item instanceof Paragraph) {
+            paragraphs.push(item);
+          } else if (item instanceof TextRun) {
+            paragraphs.push(new Paragraph({ children: [item] }));
+          }
+        });
+      });
+
+      const doc = new Document({ sections: [{ children: paragraphs }] });
+      return Packer.toBlob(doc);
+    }
+
+    // Drag and drop
+    document.addEventListener('dragenter', e => { e.preventDefault(); dropZone.classList.add('active'); });
+    document.addEventListener('dragleave', e => { if (e.target === dropZone) dropZone.classList.remove('active'); });
+    document.addEventListener('dragover', e => e.preventDefault());
+    document.addEventListener('drop', async e => {
+      e.preventDefault();
+      dropZone.classList.remove('active');
+      const file = e.dataTransfer.files[0];
+      if (file) await loadFile(file);
+    });
+
+    async function init() {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+      getEditorMetrics();
+      autoGrowEditor();
+      render();
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+name: Deploy to danxiu.icu
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 43.133.219.222 >> ~/.ssh/known_hosts
+
+      - name: Rsync to server
+        run: |
+          rsync -avz --delete \
+            --exclude .git \
+            --exclude .github \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            ./ deploy@43.133.219.222:/var/www/danxiu.icu/

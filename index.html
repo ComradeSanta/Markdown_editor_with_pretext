@@ -336,6 +336,7 @@
     let sourceMode = 'md'; // 'md' or 'docx'
     let originalDocxBlob = null; // Store original DOCX blob when opening docx files
     let originalHtml = null; // Store original HTML for preview
+    let dirty = false; // True when there are unsaved changes
 
     // Theme handling
     function setTheme(theme) {
@@ -396,6 +397,7 @@
     }
 
     editor.addEventListener('input', () => {
+      dirty = true;
       autoGrowEditor();
       render();
     });
@@ -407,6 +409,16 @@
     }
 
     window.addEventListener('resize', onResize);
+
+    // ---- Unsaved-changes warning ----
+    // `dirty` is set on any edit and cleared when a file is opened or saved.
+    // Browsers show their own generic dialog text; the message here is ignored.
+
+    window.addEventListener('beforeunload', e => {
+      if (!dirty) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
 
     // ---- Synchronized scrolling ----
     // When the user scrolls one pane, scroll the other to the same fraction of
@@ -434,15 +446,9 @@
     preview.addEventListener('scroll', () => syncScrollFromTo(preview, editor));
 
     btnNew.addEventListener('click', () => {
-      editor.value = '';
-      currentFileHandle = null;
-      currentFilename = 'untitled';
-      sourceMode = 'md';
-      originalHtml = null;
-      fileInfo.textContent = '';
-      modeBadge.style.display = 'none';
-      autoGrowEditor();
-      render();
+      // Open a fresh editor in a new tab instead of clearing the current one,
+      // so existing content is never discarded.
+      window.open(location.href, '_blank');
     });
 
     btnOpen.addEventListener('click', async () => {
@@ -490,6 +496,7 @@
         modeBadge.style.display = 'none';
       }
 
+      dirty = false; // Content matches the file on disk
       autoGrowEditor();
       render();
     }
@@ -587,6 +594,7 @@
           const writable = await handle.createWritable();
           await writable.write(editor.value);
           await writable.close();
+          dirty = false;
           currentFileHandle = handle;
           currentFilename = handle.name.replace(/\.[^.]+$/, '');
           fileInfo.textContent = handle.name;
@@ -597,6 +605,7 @@
           a.href = url;
           a.download = currentFilename + '.md';
           a.click();
+          dirty = false;
           URL.revokeObjectURL(url);
         }
       } catch (e) { if (e.name !== 'AbortError') console.error(e); }
@@ -623,6 +632,7 @@
           const writable = await handle.createWritable();
           await writable.write(docx);
           await writable.close();
+          dirty = false;
           currentFileHandle = handle;
           currentFilename = handle.name.replace(/\.[^.]+$/, '');
           fileInfo.textContent = handle.name;
@@ -636,6 +646,7 @@
           a.href = url;
           a.download = currentFilename + '.docx';
           a.click();
+          dirty = false;
           URL.revokeObjectURL(url);
         }
       } catch (e) { if (e.name !== 'AbortError') console.error(e); }

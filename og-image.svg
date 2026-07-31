@@ -25,9 +25,9 @@
   </g>
 
   <!-- text block -->
-  <text x="520" y="268" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="68" fill="#ffffff">Markdown + Word</text>
-  <text x="520" y="352" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="68" fill="#ffffff">Editor</text>
-  <text x="520" y="415" font-family="DejaVu Sans, sans-serif" font-size="34" fill="#b0aeab">Open &amp; save Word (.docx) files</text>
-  <text x="520" y="465" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#8a8885">Private · Offline · No signup</text>
-  <text x="520" y="530" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#3d8bef">danxiu.icu</text>
+  <text x="520" y="280" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="84" fill="#ffffff">mdbare</text>
+  <text x="520" y="360" font-family="DejaVu Sans, sans-serif" font-size="36" fill="#b0aeab">barely a markdown editor</text>
+  <text x="520" y="425" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#8a8885">Opens &amp; saves Word (.docx) files, though.</text>
+  <text x="520" y="470" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#8a8885">Private · Offline · No signup</text>
+  <text x="520" y="535" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#3d8bef">danxiu.icu</text>
 </svg>

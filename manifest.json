@@ -1,7 +1,7 @@
 {
-  "name": "Markdown Editor",
-  "short_name": "MD Editor",
-  "description": "A markdown editor with synchronized scrolling preview",
+  "name": "mdbare",
+  "short_name": "mdbare",
+  "description": "Barely a markdown editor. Opens and saves Word files, though.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

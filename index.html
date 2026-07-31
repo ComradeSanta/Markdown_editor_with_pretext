@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MD Editor — Markdown editor that opens &amp; saves Word files</title>
+  <title>mdbare</title>
   <meta name="description" content="Free, private Markdown editor in your browser. Open and export Word (.docx) files, live synced preview, works offline as a PWA. No signup — files never leave your device.">
   <link rel="canonical" href="https://danxiu.icu/">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://danxiu.icu/">
-  <meta property="og:title" content="Markdown + Word Editor">
-  <meta property="og:description" content="Open &amp; save Word (.docx) files as Markdown. Private, offline, no signup.">
+  <meta property="og:title" content="mdbare — barely a markdown editor">
+  <meta property="og:description" content="Opens &amp; saves Word (.docx) files, though. Private, offline, no signup.">
   <meta property="og:image" content="https://danxiu.icu/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Markdown + Word Editor">
+  <meta name="twitter:title" content="mdbare — barely a markdown editor">
   <meta name="twitter:description" content="Open &amp; save Word (.docx) files as Markdown. Private, offline, no signup.">
   <meta name="twitter:image" content="https://danxiu.icu/og-image.png">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
@@ -143,6 +143,17 @@
       border-right: 1px solid var(--border);
     }
 
+    .divider {
+      width: 5px;
+      flex-shrink: 0;
+      align-self: stretch;
+      cursor: col-resize;
+      background: transparent;
+      transition: background 0.15s;
+    }
+
+    .divider:hover { background: var(--accent); }
+
     .preview-pane {
       flex: 1;
       min-width: 0;
@@ -177,6 +188,7 @@
       background: var(--bg);
       color: var(--text);
       caret-color: var(--accent);
+      resize: none;
       max-height: calc(100vh - 100px);
       overflow-y: auto;
       min-height: calc(100vh - 100px);
@@ -321,6 +333,7 @@
       <div class="pane-label">Markdown</div>
       <textarea id="editor" placeholder="Start typing markdown..."></textarea>
     </div>
+    <div class="divider" id="divider"></div>
     <div class="preview-pane">
       <div class="pane-label">Preview</div>
       <div id="preview"></div>
@@ -459,6 +472,41 @@
 
     editor.addEventListener('scroll', () => syncScrollFromTo(editor, preview));
     preview.addEventListener('scroll', () => syncScrollFromTo(preview, editor));
+
+    // ---- Split-pane divider ----
+    // Dragging the divider sets the editor pane's width as a percentage of the
+    // container; the preview pane keeps flex:1 and takes the remaining space,
+    // so both sides resize together.
+
+    const divider = document.getElementById('divider');
+    const editorPane = document.querySelector('.editor-pane');
+    const editorContainer = document.querySelector('.editor-container');
+
+    divider.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      divider.setPointerCapture(e.pointerId);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      const onMove = ev => {
+        const rect = editorContainer.getBoundingClientRect();
+        const frac = Math.min(0.85, Math.max(0.15, (ev.clientX - rect.left) / rect.width));
+        editorPane.style.flex = 'none';
+        editorPane.style.width = (frac * 100) + '%';
+        // The editor's wrapped line count (and thus its height) depends on the
+        // new width; the preview reflows on its own and needs no re-render.
+        getEditorMetrics();
+        autoGrowEditor();
+      };
+      const onUp = () => {
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        divider.removeEventListener('pointermove', onMove);
+        divider.removeEventListener('pointerup', onUp);
+      };
+      divider.addEventListener('pointermove', onMove);
+      divider.addEventListener('pointerup', onUp);
+    });
 
     btnNew.addEventListener('click', () => {
       // Open a fresh editor in a new tab instead of clearing the current one,

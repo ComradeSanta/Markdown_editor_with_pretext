@@ -1,10 +1,12 @@
-# Markdown + Word Editor
+# mdbare
+
+Barely a markdown editor. Opens and saves Word files, though.
 
 A free, private markdown editor that runs entirely in your browser — and speaks Word.
 
 **Try it: https://danxiu.icu**
 
-![Markdown + Word Editor](og-image.png)
+![mdbare — barely a markdown editor](og-image.png)
 
 ## Features
 

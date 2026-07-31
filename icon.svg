@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="plate" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#3d8bef"/>
-      <stop offset="1" stop-color="#1a5fb4"/>
+      <stop offset="0" stop-color="#d98a6e"/>
+      <stop offset="1" stop-color="#b4634a"/>
     </linearGradient>
   </defs>
 
@@ -24,5 +24,5 @@
   <rect x="176" y="294" width="96" height="18" rx="9" fill="#9a9996"/>
 
   <!-- text caret -->
-  <rect x="288" y="288" width="14" height="30" rx="7" fill="#1c71d8"/>
+  <rect x="288" y="288" width="14" height="30" rx="7" fill="#a9583e"/>
 </svg>

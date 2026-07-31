@@ -5,8 +5,8 @@
       <stop offset="1" stop-color="#181715"/>
     </linearGradient>
     <linearGradient id="plate" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#3d8bef"/>
-      <stop offset="1" stop-color="#1a5fb4"/>
+      <stop offset="0" stop-color="#d98a6e"/>
+      <stop offset="1" stop-color="#b4634a"/>
     </linearGradient>
   </defs>
 
@@ -21,13 +21,13 @@
     <rect x="176" y="196" width="120" height="28" rx="14" fill="#3d3846"/>
     <rect x="176" y="252" width="160" height="18" rx="9" fill="#9a9996"/>
     <rect x="176" y="294" width="96" height="18" rx="9" fill="#9a9996"/>
-    <rect x="288" y="288" width="14" height="30" rx="7" fill="#1c71d8"/>
+    <rect x="288" y="288" width="14" height="30" rx="7" fill="#a9583e"/>
   </g>
 
   <!-- text block -->
-  <text x="520" y="280" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="84" fill="#ffffff">mdbare</text>
+  <text x="520" y="280" font-family="Cormorant Garamond, DejaVu Serif, serif" font-weight="600" font-size="88" fill="#ffffff">mdbare</text>
   <text x="520" y="360" font-family="DejaVu Sans, sans-serif" font-size="36" fill="#b0aeab">barely a markdown editor</text>
   <text x="520" y="425" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#8a8885">Opens &amp; saves Word (.docx) files, though.</text>
   <text x="520" y="470" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#8a8885">Private · Offline · No signup</text>
-  <text x="520" y="535" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#3d8bef">danxiu.icu</text>
+  <text x="520" y="535" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#cc785c">danxiu.icu</text>
 </svg>

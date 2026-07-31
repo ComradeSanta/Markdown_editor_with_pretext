@@ -22,5 +22,6 @@ jobs:
           rsync -avz --delete \
             --exclude .git \
             --exclude .github \
+            --exclude design-md \
             -e "ssh -i ~/.ssh/deploy_key" \
             ./ deploy@43.133.219.222:/var/www/danxiu.icu/

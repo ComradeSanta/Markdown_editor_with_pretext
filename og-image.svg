@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#241f1a"/>
+      <stop offset="1" stop-color="#181715"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3d8bef"/>
+      <stop offset="1" stop-color="#1a5fb4"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- app icon (icon.svg inlined, 512 scaled to 340) -->
+  <g transform="translate(110,145) scale(0.664)">
+    <rect x="0" y="0" width="512" height="512" rx="90" fill="url(#plate)"/>
+    <path d="M140 96 h178 l60 60 v232 a28 28 0 0 1 -28 28 H168 a28 28 0 0 1 -28 -28 Z" transform="translate(7,11)" fill="#000000" opacity="0.18"/>
+    <path d="M140 96 h178 l60 60 v232 a28 28 0 0 1 -28 28 H168 a28 28 0 0 1 -28 -28 Z" fill="#ffffff"/>
+    <path d="M318 96 l60 60 h-32 a28 28 0 0 1 -28 -28 Z" fill="#d5d3cf"/>
+    <rect x="176" y="196" width="120" height="28" rx="14" fill="#3d3846"/>
+    <rect x="176" y="252" width="160" height="18" rx="9" fill="#9a9996"/>
+    <rect x="176" y="294" width="96" height="18" rx="9" fill="#9a9996"/>
+    <rect x="288" y="288" width="14" height="30" rx="7" fill="#1c71d8"/>
+  </g>
+
+  <!-- text block -->
+  <text x="520" y="268" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="68" fill="#ffffff">Markdown + Word</text>
+  <text x="520" y="352" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="68" fill="#ffffff">Editor</text>
+  <text x="520" y="415" font-family="DejaVu Sans, sans-serif" font-size="34" fill="#b0aeab">Open &amp; save Word (.docx) files</text>
+  <text x="520" y="465" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#8a8885">Private · Offline · No signup</text>
+  <text x="520" y="530" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#3d8bef">danxiu.icu</text>
+</svg>

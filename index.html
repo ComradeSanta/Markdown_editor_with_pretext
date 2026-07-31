@@ -3,7 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Markdown + Word Editor</title>
+  <title>MD Editor — Markdown editor that opens &amp; saves Word files</title>
+  <meta name="description" content="Free, private Markdown editor in your browser. Open and export Word (.docx) files, live synced preview, works offline as a PWA. No signup — files never leave your device.">
+  <link rel="canonical" href="https://danxiu.icu/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://danxiu.icu/">
+  <meta property="og:title" content="Markdown + Word Editor">
+  <meta property="og:description" content="Open &amp; save Word (.docx) files as Markdown. Private, offline, no signup.">
+  <meta property="og:image" content="https://danxiu.icu/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Markdown + Word Editor">
+  <meta name="twitter:description" content="Open &amp; save Word (.docx) files as Markdown. Private, offline, no signup.">
+  <meta name="twitter:image" content="https://danxiu.icu/og-image.png">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="icon" type="image/png" href="image.png?v=3">
   <link rel="apple-touch-icon" href="image.png?v=3">
@@ -293,6 +304,7 @@
       <button id="btn-save">Save</button>
       <div class="save-dropdown" id="save-dropdown">
         <button id="btn-save-md">Save as MD</button>
+        <button id="btn-save-txt">Save as TXT</button>
         <button id="btn-save-docx">Save as DOCX</button>
       </div>
     </div>
@@ -326,6 +338,7 @@
     const btnOpen = document.getElementById('btn-open');
     const btnSave = document.getElementById('btn-save');
     const btnSaveMd = document.getElementById('btn-save-md');
+    const btnSaveTxt = document.getElementById('btn-save-txt');
     const btnSaveDocx = document.getElementById('btn-save-docx');
     const saveDropdown = document.getElementById('save-dropdown');
     const fileInfo = document.getElementById('file-info');
@@ -584,14 +597,14 @@
     });
     document.addEventListener('click', () => saveDropdown.classList.remove('show'));
 
-    // Save as MD
-    btnSaveMd.addEventListener('click', async () => {
+    // Save as plain text (MD / TXT share the same logic, only ext and MIME differ)
+    async function saveAsText(ext, mime, description) {
       saveDropdown.classList.remove('show');
       try {
         if (showSaveFilePicker) {
           const handle = await showSaveFilePicker({
-            suggestedName: currentFilename + '.md',
-            types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }]
+            suggestedName: currentFilename + ext,
+            types: [{ description, accept: { [mime]: [ext] } }]
           });
           const writable = await handle.createWritable();
           await writable.write(editor.value);
@@ -601,17 +614,20 @@
           currentFilename = handle.name.replace(/\.[^.]+$/, '');
           fileInfo.textContent = handle.name;
         } else {
-          const blob = new Blob([editor.value], { type: 'text/markdown' });
+          const blob = new Blob([editor.value], { type: mime });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = currentFilename + '.md';
+          a.download = currentFilename + ext;
           a.click();
           dirty = false;
           URL.revokeObjectURL(url);
         }
       } catch (e) { if (e.name !== 'AbortError') console.error(e); }
-    });
+    }
+
+    btnSaveMd.addEventListener('click', () => saveAsText('.md', 'text/markdown', 'Markdown'));
+    btnSaveTxt.addEventListener('click', () => saveAsText('.txt', 'text/plain', 'Plain Text'));
 
     // Save as DOCX
     btnSaveDocx.addEventListener('click', async () => {

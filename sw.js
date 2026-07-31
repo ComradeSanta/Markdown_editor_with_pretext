@@ -1,10 +1,10 @@
-const CACHE_NAME = 'markdown-editor-v4';
+const CACHE_NAME = 'markdown-editor-v5';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
-  './image.png?v=3',
-  './image-192.png?v=3',
+  './image.png?v=4',
+  './image-192.png?v=4',
   './vendor/pretext/layout.js',
   './vendor/pretext/measurement.js',
   './vendor/pretext/analysis.js',
